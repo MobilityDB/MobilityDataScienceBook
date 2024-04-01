@@ -1,4 +1,7 @@
 ## Mobility Data Science: From Data to Insights
+### Mahmoud Sakr, Alejandro Vaisman, Esteban Zimányi
+
+
 ### Chapter 2: Spatial and Temporal Databases
 
 
