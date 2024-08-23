@@ -132,18 +132,18 @@ ORDER BY icao24
 
 -------------------------------------------------------------
 
--- Geoaltituve vs Time '06a1a5'
+-- Geoaltituve vs Time for aircraft '07c4f1f'
 
 SELECT et_ts AS "time", geoaltitude
 FROM flights
-WHERE icao24 IN ('06a1a5') 
+WHERE icao24 IN ('07c4f1f') 
 -------------------------------------------------------------
 
 
 SELECT et_ts AS "time", geoaltitude
 FROM flights
-WHERE icao24 IN ('06a1bc') 
--- Geoaltitude vs Time '06a1bc'
+WHERE icao24 IN ('7c3349') 
+-- Geoaltitude vs Time '7c3349'
 
 
 ======================== DASHBOARD 3 =======================
