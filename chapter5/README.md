@@ -13,6 +13,7 @@ examples and exercises in the book.
 opensky.sql: script to create the tables for the opensky use case. 
 The dataset can be downloaded from https://opensky-network.org/datasets/states/2020-06-01/
 
+openskyDashboards.sql: SQL queries for feeding the three example panelk in the chapter.
 
 ### Maritime Movement
 
