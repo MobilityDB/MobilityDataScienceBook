@@ -23,5 +23,6 @@ The dataset used can be downloaded from https://web.ais.dk/aisdata/aisdk-2024-03
 To run the script:
 
 \i input_ais.sql
+
 SELECT input_ais();
 
