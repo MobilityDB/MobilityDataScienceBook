@@ -10,3 +10,5 @@ examples and exercises in the book.
 
 ### Northwind Data Warehouse
 
+NorthwindDW_PSQL.zip: Nortwind datawarehouse script and data, to be downloaded on a PostgreSQL database rihght away.
+
