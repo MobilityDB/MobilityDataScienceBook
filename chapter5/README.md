@@ -20,3 +20,8 @@ openskyDashboards.sql: SQL queries for feeding the three example panelk in the c
 input_ais.sql: script to create the tables for the omaritime movement use case. 
 The dataset used can be downloaded from https://web.ais.dk/aisdata/aisdk-2024-03-01.zip
 
+To run the script:
+
+\i input_ais.sql
+SELECT input_ais();
+
