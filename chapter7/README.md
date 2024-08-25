@@ -34,11 +34,8 @@ osm2pgsql -H /tmp -P 5432 (or your port) -d deliveries_sf0.1 -c -U
 yourUser -W --proj=3857 brussels.osm
 
 psql deliveries_sf0.1
-
-  \i brussels_preparedata.sql
-  
+  \i brussels_preparedata.sql
   \i berlinmod_datagenerator.sql
-  
   \i deliveries_datagenerator.sql
   
- select deliveries_datagenerator(scalefactor:= 0.1);
+select deliveries_datagenerator(scalefactor:= 0.1);
