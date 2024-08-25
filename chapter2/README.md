@@ -7,7 +7,7 @@
 ### Spatial Databases
 
 There is a database dump for the spatial database, called belgium.sql.
-It can be restored from the command prompt as
+It can be restored from the command prompt as (we assume user Postgres, database name Belgium, and port 5432, you should use your settings).
 
 psql  -U postgres -p 5432 -d Belgium    -f /file-location-path/belgium.sql
 
