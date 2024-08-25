@@ -37,4 +37,5 @@ psql deliveries_sf0.1
   \i brussels_preparedata.sql
   \i berlinmod_datagenerator.sql
   \i deliveries_datagenerator.sql
+  
   select deliveries_datagenerator(scalefactor:= 0.1);
