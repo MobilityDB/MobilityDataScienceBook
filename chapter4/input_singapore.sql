@@ -13,7 +13,8 @@ CREATE TABLE SingaporeInputCSV(
 
 COPY SingaporeInputCSV(trj_id, driving_mode, osname, pingtimestamp, rawlat,
   rawlng, speed, bearing, accuracy)
-FROM '/home/esteban/src/singapore/part-00.csv' DELIMITER ',' CSV HEADER;
+FROM '/home/esteban/src/MobilityDataScience/chapter4/singapore_part-00.csv' 
+  DELIMITER ',' CSV HEADER;
 
 SELECT COUNT(*) FROM SingaporeInputCSV;
 -- 3034553

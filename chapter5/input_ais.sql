@@ -13,20 +13,20 @@ BEGIN
   SET DateStyle = 'ISO, DMY';
 
   -- Create input table to hold CSV records
-  DROP TABLE IF EXISTS AISInputCSV;
-  CREATE TABLE AISInputCSV(
+  DROP TABLE IF EXISTS AISInput;
+  CREATE TABLE AISInput(
     T timestamp,
     TypeOfMobile varchar(100),
     MMSI integer,
     Latitude float,
     Longitude float,
-    navigationalStatus varchar(100),
+    NavigationalStatus varchar(100),
     ROT float,
     SOG float,
     COG float,
     Heading integer,
     IMO varchar(100),
-    Callsign varchar(100),
+    CallSign varchar(100),
     Name varchar(100),
     ShipType varchar(100),
     CargoType varchar(100),
@@ -45,38 +45,41 @@ BEGIN
   );
 
   -- Input CSV records
-  RAISE INFO 'Reading CSV file ...';
-  COPY AISInputCSV(T, TypeOfMobile, MMSI, Latitude, Longitude, NavigationalStatus,
+  RAISE INFO 'Reading CSV file into table AISInput ...';
+  COPY AISInput(T, TypeOfMobile, MMSI, Latitude, Longitude, NavigationalStatus,
     ROT, SOG, COG, Heading, IMO, CallSign, Name, ShipType, CargoType, Width, Length,
     TypeOfPositionFixingDevice, Draught, Destination, ETA, DataSourceType,
     SizeA, SizeB, SizeC, SizeD)
-  FROM '/home/.../aisdk-2023-08-01.csv' DELIMITER ',' CSV HEADER;
+  FROM '/home/esteban/src/ais/aisdk-2024-03-01.csv' DELIMITER ',' CSV HEADER;
 
-  -- Set null values and add geometry to the records
-  RAISE INFO 'Updating AISInputCSV table ...';
-  UPDATE AISInputCSV SET
+  RAISE INFO 'Updating AISInput table ...';
+  -- Set to NULL out-of-range values of latitude and longitude
+  UPDATE AISInput
+  SET Latitude = NULL, Longitude = NULL
+  WHERE Longitude NOT BETWEEN -180 AND 180 OR Latitude NOT BETWEEN -90 AND 90;
+  -- Set to NULL 'undefined' values and add geometry to the records
+  UPDATE AISInput SET
     NavigationalStatus = CASE NavigationalStatus WHEN 'Unknown value' THEN NULL END,
     IMO = CASE IMO WHEN 'Unknown' THEN NULL END,
     ShipType = CASE ShipType WHEN 'Undefined' THEN NULL END,
     TypeOfPositionFixingDevice = CASE TypeOfPositionFixingDevice
-    WHEN 'Undefined' THEN NULL END,
+      WHEN 'Undefined' THEN NULL END,
     Geom = ST_SetSRID(ST_MakePoint(Longitude, Latitude), 4326);
 
-  -- Filter out erroneous records
+  -- Filter out duplicate timestamps and valid but out-of-range values of
+  -- latitude and longitude
   RAISE INFO 'Computing AISInputFiltered table ...';
   DROP TABLE IF EXISTS AISInputFiltered;
   CREATE TABLE AISInputFiltered AS
-  SELECT DISTINCT ON(MMSI,T) *
-  FROM AISInputCSV
-  WHERE MMSI <> 0 AND
-    (Longitude BETWEEN -16.1 and 32.88 AND Latitude BETWEEN 40.18 AND 84.17)
+  SELECT DISTINCT ON (MMSI,T) *
+  FROM AISInput
+  WHERE Longitude BETWEEN -16.1 AND 32.88 AND Latitude BETWEEN 40.18 AND 84.17
   ORDER BY MMSI, T;
 
-
   -- Create table with only the columns used for creating temporal types
-  RAISE INFO 'Creating AISInput table ...';
-  DROP TABLE IF EXISTS AISInput;
-  CREATE TABLE AISInput AS
+  RAISE INFO 'Creating AISInputTarget table ...';
+  DROP TABLE IF EXISTS AISInputTarget;
+  CREATE TABLE AISInputTarget AS
   SELECT MMSI, Length, T, SOG, COG, Geom
   FROM AISInputFiltered;
 
@@ -90,9 +93,9 @@ BEGIN
     tgeompointSeq(array_agg(tgeompoint(ST_Transform(Geom, 25832), T) ORDER BY T)),
     tfloatSeq(array_agg(tfloat(SOG, T) ORDER BY T) FILTER (WHERE SOG IS NOT NULL)),
     tfloatSeq(array_agg(tfloat(COG, T) ORDER BY T) FILTER (WHERE COG IS NOT NULL))
-  FROM AISInput
+  FROM AISInputTarget
   GROUP BY MMSI;
-  -- Add the trajectory column
+  -- Add the trajectory colum
   ALTER TABLE Ships ADD COLUMN Traj geometry;
   UPDATE Ships SET Traj = trajectory(Trip);
   -- Fill the length attribute if possible
@@ -112,22 +115,22 @@ BEGIN
   */
   DROP TABLE IF EXISTS Lengths;
   CREATE TABLE Lengths(MMSI, Length) AS 
-    SELECT MMSI, MAX(Length) FROM AISInput GROUP BY MMSI; 
+    SELECT MMSI, MAX(Length) FROM AISInputTarget GROUP BY MMSI; 
   ALTER TABLE Ships ADD COLUMN Length float;
   UPDATE Ships s SET 
     length = (SELECT length FROM Lengths l WHERE s.MMSI = l.MMSI);
 
   -- Print statistics about the tables
   RAISE INFO '--------------------------------------------------------------';
-  SELECT pg_size_pretty(pg_total_relation_size('AISInputCSV')) INTO table_size;
-  SELECT to_char(COUNT(*), 'fm999G999G999') FROM AISInputCSV INTO table_count;
-  RAISE INFO 'Size of the AISInputCSV table: %, % rows', table_size, table_count;
-  SELECT pg_size_pretty(pg_total_relation_size('AISInputFiltered')) INTO table_size;
-  SELECT to_char(COUNT(*), 'fm999G999G999') FROM AISInputFiltered INTO table_count;
-  RAISE INFO 'Size of the AISInputFiltered table: %, % rows', table_size, table_count;
   SELECT pg_size_pretty(pg_total_relation_size('AISInput')) INTO table_size;
   SELECT to_char(COUNT(*), 'fm999G999G999') FROM AISInput INTO table_count;
   RAISE INFO 'Size of the AISInput table: %, % rows', table_size, table_count;
+  SELECT pg_size_pretty(pg_total_relation_size('AISInputFiltered')) INTO table_size;
+  SELECT to_char(COUNT(*), 'fm999G999G999') FROM AISInputFiltered INTO table_count;
+  RAISE INFO 'Size of the AISInputFiltered table: %, % rows', table_size, table_count;
+  SELECT pg_size_pretty(pg_total_relation_size('AISInputTarget')) INTO table_size;
+  SELECT to_char(COUNT(*), 'fm999G999G999') FROM AISInputTarget INTO table_count;
+  RAISE INFO 'Size of the AISInputTarget table: %, % rows', table_size, table_count;
   SELECT pg_size_pretty(pg_total_relation_size('Ships')) INTO table_size;
   SELECT to_char(COUNT(*), 'fm999G999G999') FROM Ships INTO table_count;
   RAISE INFO 'Size of the Ships table: %, % rows', table_size, table_count;

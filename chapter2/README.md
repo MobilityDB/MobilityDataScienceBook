@@ -4,10 +4,9 @@
 
 ### Chapter 2: Spatial and Temporal Databases
 
-
 ### Spatial Databases
 
-There is a database dump for the spartial database, called belgium.sql.
+There is a database dump for the spatial database, called belgium.sql.
 It can be restored from the command prompt as
 
 psql  -U postgres -p 5432 -d Belgium    -f /file-location-path/belgium.sql
