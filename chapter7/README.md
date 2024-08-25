@@ -12,3 +12,29 @@ examples and exercises in the book.
 
 NorthwindDW_PSQL.zip: Nortwind datawarehouse script and data, to be downloaded on a PostgreSQL database rihght away.
 
+### Northwind Mobility Data Warehouse
+
+Creates the deliveries data warehouse used in the chapter.
+
+The steps to follow are detailed next.
+
+createdb deliveries_sf0.1
+
+psql deliveries_sf0.1
+  create extension mobilitydb cascade;
+  create extension pgrouting;
+  create extension hstore;
+  exit
+
+osm2pgrouting -h localhost -p 5432 -U yourUser  -W  yourPassword -f brussels.osm --dbname deliveries_sf0.1 -c mapconfig_brussels.xml
+
+-- mapconfig_brussels.xml is given in the material for Chapter 6.
+
+osm2pgsql -H /tmp -P 5432 (or your port) -d deliveries_sf0.1 -c -U 
+yourUser -W --proj=3857 brussels.osm
+
+psql deliveries_sf0.1
+  \i brussels_preparedata.sql
+  \i berlinmod_datagenerator.sql
+  \i deliveries_datagenerator.sql
+  select deliveries_datagenerator(scalefactor:= 0.1);
