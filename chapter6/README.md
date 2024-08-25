@@ -27,7 +27,7 @@ osm2pgsql -H /tmp -P 5432 -H localhost -d brussels_sf0.01 -c -U postgres -W --pr
 psql -d brussels_sf0.01 -p 5432 (or your port) -h localhost
 
  \i brussels_preparedata.sql
- \i berlinmod_datagenerator.sql
+ \i berlinmod_datagenerator.sql
  
 select berlinmod_datagenerator(0.1);
 
