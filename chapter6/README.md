@@ -9,4 +9,26 @@ allowing you to input these datasets in PostgreSQL and reproduce the
 examples and exercises in the book.
 
 
+### BerlinMOD Data Generator
 
+These files create the BerlinMOD benchmark for the city of Brussels, based on the brussels.osm file that can be obtained from OpenStreetMap. To produce the database you shoul follow the step next.
+
+--------------------------
+Create the database brussels_sf0.1 (or your database name)
+
+CREATE EXTENSION MobilityDB Cascade;
+create extension pgrouting;
+create extension hstore;
+
+osm2pgrouting -h localhost -p 5432 -U postgres -W postgres -f brussels.osm --dbname brussels_sf0.1 -c mapconfig_brussels.xml
+
+osm2pgsql -H /tmp -P 5432 -H localhost -d brussels_sf0.01 -c -U postgres -W --proj=3857 brussels.osm
+
+psql -d brussels_sf0.01 -p 5432 (or your port) -h localhost
+
+ \i brussels_preparedata.sql
+ \i berlinmod_datagenerator.sql
+ 
+select berlinmod_datagenerator(0.1);
+
+----------------------------------------
