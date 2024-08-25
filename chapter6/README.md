@@ -28,7 +28,7 @@ psql -d brussels_sf0.01 -p 5432 (or your port) -h localhost
 
  \i brussels_preparedata.sql
  \i berlinmod_datagenerator.sql
- 
-select berlinmod_datagenerator(0.1);
+ 
+ select berlinmod_datagenerator(0.1);
 
 ----------------------------------------
