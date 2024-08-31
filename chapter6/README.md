@@ -32,3 +32,12 @@ psql -d brussels_sf0.01 -p 5432 (or your port) -h localhost
  select berlinmod_datagenerator(0.1);
 
 ----------------------------------------
+
+### Using Prebuilt CSVs
+
+Alternatively, you can use prebuilt CSV files with different scale factors. You can find them
+at https://github.com/MobilityDB/MobilityDB-BerlinMOD/blob/master/README.md.
+
+After downloading the right file, you create the mobility database using the 
+berlinmod_load.sql script.  
+
