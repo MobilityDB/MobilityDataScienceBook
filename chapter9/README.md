@@ -4,5 +4,5 @@
 ### Chapter 9: Mobility Data Cleaning
 
 cleaningStaticAttributes.sql: SQL script to create and clean the AIS database.
-timeseriesNotebook.ipynb: Jupiter Notebook for running the time series analysis and smoothing.
+timeseriesNotebookwOutliers.ipynb: Jupiter Notebook for running the time series analysis and smoothing.
 
