@@ -14,6 +14,12 @@ ScheldeData.zip: data obtained from http://waterinfo.be, contanining electric co
 
 EC_STWSScheldeApril.ipynb: Jupyter notebooks containing the code for the visualizations of the EC and Temp data.
 
+2dtimechart.ipynb: 2D-time (mosaic) chart of temperatures. Python code.
+
+ganttchart.ipynb: Gantt chart example. Python code.
+
+timehistogram.ipynb: Time histogram. Python code.
+
 ### Delhi Dataset
 
 delhiscript.zip: Script to load the Delhi pollution data, which can be downloaded from 
