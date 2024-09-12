@@ -27,9 +27,9 @@ https://www.cse.iitd.ac.in/pollutiondata/delhi/download
 
 ### Singapore Dataset
 
-TODO
+singaporeclusteringandheatmap.ipynb: Python code to display heatmap and perform k-means and dbscan clustering in the city of Singapore.
 
 ### Jakarta Dataset 
 
-TODO
+jakarta-heatmap.ipynb: Python code to display heatmap  in the city of Singapore.
 
