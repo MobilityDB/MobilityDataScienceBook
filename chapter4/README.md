@@ -12,13 +12,13 @@ examples and exercises in the book.
 
 ScheldeData.zip: data obtained from http://waterinfo.be, contanining electric conductivity (EC) and temperature(Temp) for some stations (also included in the dataset) between April 1st and 9th, 2022.
 
-EC_STWSScheldeApril.ipynb: Jupyter notebooks containing the code for the visualizations of the EC and Temp data.
+EC_STWSScheldeApril.ipynb: Jupyter notebooks containing the code for the visualizations of the EC and Temp data. Uses the Schelde river dataset.
 
-2dtimechart.ipynb: 2D-time (mosaic) chart of temperatures. Python code.
+2dtimeshartsalinity-andTimeHistogram.ipynb: 2D-time (mosaic) chart and time histogram of salinity. Python code.
 
 ganttchart.ipynb: Gantt chart example. Python code.
 
-timehistogram.ipynb: Time histogram. Python code.
+ 
 
 ### Delhi Dataset
 
