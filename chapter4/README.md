@@ -18,7 +18,7 @@ EC_STWSScheldeApril.ipynb: Jupyter notebooks containing the code for the visuali
 
 ganttchart.ipynb: Gantt chart example. Python code.
 
- 
+timehistogramSalinity.ipynb: Python notebook for Pie, Bar, Anscombe, and Histograms.
 
 ### Delhi Dataset
 
