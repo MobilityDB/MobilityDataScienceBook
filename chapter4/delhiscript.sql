@@ -39,7 +39,10 @@ SELECT array_agg(dir order by dir asc) INTO fileNames from dirs ;
  END LOOP;
 END $$;
 
+ALTER TABLE delhiInput
+ADD COLUMN geom geometry(Point,4326);
 
+UPDATE delhiInput SET geom = ST_MakePoint(lon, lat) ;
 -- to mobilityDB
 ALTER TABLE delhiInput ADD COLUMN trip_inst tgeompoint;
 ALTER TABLE delhiInput ADD COLUMN pm1_0_inst tfloat;
