@@ -26,11 +26,11 @@ psql deliveries_sf0.1
   create extension hstore;
   exit
 
-osm2pgrouting -h localhost -p 5432 -U yourUser  -W  yourPassword -f brussels.osm --dbname deliveries_sf0.1 -c mapconfig_brussels.xml
+osm2pgrouting -h yourhost -p 5432 (or your port)  -U yourUser  -W  yourPassword -f brussels.osm --dbname deliveries_sf0.1 -c mapconfig_brussels.xml
 
 -- mapconfig_brussels.xml is given in the material for Chapter 6.
 
-osm2pgsql -H /tmp -P 5432 (or your port) -d deliveries_sf0.1 -c -U 
+osm2pgsql -H yourhost  -P 5432 (or your port) -d deliveries_sf0.1 -c -U 
 yourUser -W --proj=3857 brussels.osm
 
 psql deliveries_sf0.1
