@@ -52,7 +52,7 @@ UPDATE FlightsInput SET
 -- SELECT pg_size_pretty( pg_total_reLation_size('FlightsInput') );
 
 ALTER TABLE FlightsInput
-ADD COLUMN Geo geography(Point, 4326);
+ADD COLUMN Geo geometry(Point, 4326);
 UPDATE FlightsInput SET Geo = ST_Point(Lon, Lat, 4326);
 
 WITH ICAO24_WithNullLon AS (
