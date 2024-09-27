@@ -150,19 +150,24 @@ WHERE icao24 IN ('7c3349')
 
 -- GPS Location Over Time Panel
 
-WITH
-Canada(geomcanada) AS 
-   (SELECT ST_Transform(ST_makeEnvelope(-172.54, 23.81, 
-						-47.74 ,86.46,4326),4326) ),
-CanadaFlights AS (SELECT et_ts, icao24, geom
- FROM flights TABLESAMPLE SYSTEM (5), Canada C
- WHERE 
-       et_ts between '2020-06-01 2:30:00' and '2020-06-01    
-       4:30:00' AND ST_intersects(C.geomcanada,geom))
-SELECT et_ts, icao24, lat, lon,to_number(icao24,'999999') as nro 
--- TABLESAMPLE SYSTEM (n) returns only n% of the data from the table.
-FROM flights  
-WHERE icao24 IN (SELECT icao24 from CanadaFlights limit 7)  
+ WITH Time(Period) AS (
+  SELECT tstzspan '[2020-06-01 08:00:00, 2020-06-01 09:00:00)'),
+  
+FlightTimeSlice(ICAO24, CallSign, TripTimeSlice, GeoAltitude) AS (
+  SELECT ICAO24, CallSign, atTime(Flight, Period), atTime(GeoAltitude, Period) as geoaltitude
+  FROM Flights TABLESAMPLE SYSTEM(5), Time
+  WHERE atTime(Flight, Period) IS NOT NULL), 
+
+FinalOutput AS (
+  SELECT ICAO24, CallSign,
+	getValue(unnest(instants(GeoAltitude))) AS Altitude,
+  ST_X(getValue(unnest(instants(TripTimeSlice)))::geometry) AS Lon,
+  ST_Y(getValue(unnest(instants(TripTimeSlice)))::geometry) AS Lat
+  FROM FlightTimeSlice
+  WHERE TripTimeSlice  IS NOT NULL  )
+  
+SELECT *
+FROM FinalOutput 
 
 ------------------------
 
