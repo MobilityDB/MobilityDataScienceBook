@@ -235,35 +235,42 @@ AND geoaltitude IS NOT NULL;
 -- LANDING FLIGHTS PANEL
 
 
-WITH
-flight_traj_time_slice (icao24, callsign, time_slice_trip, time_slice_geoaltitude, time_slice_vertrate) AS
-(SELECT icao24, callsign,
-atTime(trip, '[2020-06-01 03:00:00, 2020-06-01 04:00:00)'::tstzspan),
-atTime(geoaltitude, '[2020-06-01 03:00:00, 2020-06-01 04:00:00)'::tstzspan),
-atTime(vertrate,'[2020-06-01 03:00:00, 2020-06-01 04:00:00)'::tstzspan)
-FROM flight_traj TABLESAMPLE SYSTEM (20)
-WHERE atTime(trip, '[2020-06-01 03:00:00, 2020-06-01 04:00:00)'::tstzspan) is not null
-),
- 
-flight_traj_time_slice_descent(icao24, callsign, landing_trip, landing_geoaltitude, landing_vertrate) AS
-(SELECT icao24, callsign,
-atTime(time_slice_trip, sequenceN( atValues(time_slice_vertrate, '[-20,0)'::floatspan), 1)::tstzspan),
-atTime(time_slice_geoaltitude, sequenceN(atValues( time_slice_vertrate, '[-20,0)'::floatspan) ,1)::tstzspan),
-atTime(time_slice_vertrate, sequenceN(atValues (time_slice_vertrate, '[-20,0)'::floatspan) ,1)::tstzspan)
-FROM flight_traj_time_slice
-WHERE 
-atTime(time_slice_trip, sequenceN(
-atValues(time_slice_vertrate, '[-20,0)'::floatspan), 1)::tstzspan) is not null ),
-final_output AS
-(SELECT icao24, callsign,
-getValue(unnest(instants(landing_geoaltitude))) AS geoaltitude,
-getValue(unnest(instants(landing_vertrate))) AS vertrate,
-ST_X(getValue(unnest(instants(landing_trip)))) AS lon,
-ST_Y(getValue(unnest(instants(landing_trip)))) AS lat
-FROM flight_traj_time_slice_descent)
-SELECT *
-FROM final_output
-WHERE vertrate IS NOT NULL
-AND geoaltitude IS NOT NULL;
+ -- Span for determining descending planes
+WITH DescSpan(Span) AS ( SELECT floatspan '[-20,0]' ),
+-- Time period we are interested in
+TimePeriod(Period) AS (
+  SELECT tstzspan '[2020-06-01 08:00:00, 2020-06-01 10:00:00)' ),
+-- Planes in the given time period
+TargetFlight(ICAO24, CallSign, RestFlight, RestGeoAlt, RestVertRate) AS (
+  SELECT ICAO24, CallSign, atTime(Flight, Period), atTime(GeoAltitude, Period),
+    atTime(VertRate, Period)
+  FROM Flights, TimePeriod
+  WHERE atTime(Flight, Period) IS NOT NULL ),
+-- Descending planes
+FlightDescent(ICAO24, CallSign, RestGeoAlt, DescFlight, RestVertRate) AS (
+  SELECT ICAO24, CallSign,
+    atTime(RestGeoAlt, getTime(atValues(RestVertRate, Span))),
+    atTime(RestFlight, getTime(atValues(RestVertRate, Span))),
+    atValues(RestVertRate, Span)
+  FROM TargetFlight, DescSpan
+  WHERE atValues(RestVertRate, Span) IS NOT NULL AND
+    atTime(RestGeoAlt, getTime(atValues(RestVertRate, Span))) IS NOT NULL AND
+    atTime(RestFlight, getTime(atValues(RestVertRate, Span))) IS NOT NULL ),
+Instants(ICAO24, T) AS (
+  SELECT ICAO24, unnest(set(timestamps(RestGeoAlt)) +
+    set(timestamps(DescFlight)) + set(timestamps(RestVertRate)))
+  FROM FlightDescent
+  GROUP BY ICAO24, RestGeoAlt, DescFlight, RestVertRate )
+SELECT f.ICAO24, f.CallSign, getValue(atTime(RestGeoAlt, T)) AS GeoAltitude,
+  getValue(atTime(RestVertRate, T)) AS VertRate,
+  ST_X(getValue(atTime(DescFlight, T))::geometry) AS Lon,
+  ST_Y(getValue(atTime(DescFlight, T))::geometry) AS Lat, T
+FROM FlightDescent f, Instants i
+WHERE f.ICAO24 = i.ICAO24 AND
+  getValue(atTime(DescFlight, T)) IS NOT NULL AND
+  getValue(atTime(RestGeoAlt, T)) IS NOT NULL AND
+  getValue(atTime(RestVertRate, T)) IS NOT NULL AND
+  getValue(atTime(RestGeoAlt, T)) < 1000
+ORDER BY T;
 
  
