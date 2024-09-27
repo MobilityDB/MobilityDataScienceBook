@@ -168,36 +168,32 @@ WHERE icao24 IN (SELECT icao24 from CanadaFlights limit 7)
 
 -- Cruising Flights Panel
 
-WITH
-flight_traj_time_slice (icao24, callsign, time_slice_trip, time_slice_geoaltitude, time_slice_vertrate) AS
-(SELECT icao24, callsign,
-atTime(trip, '[2020-06-01 03:00:00, 2020-06-01 04:00:00)'::tstzspan),
-atTime(geoaltitude, '[2020-06-01 03:00:00, 2020-06-01 04:00:00)'::tstzspan),
-atTime(vertrate,'[2020-06-01 03:00:00, 2020-06-01 04:00:00)'::tstzspan)
-FROM flight_traj TABLESAMPLE SYSTEM (20)
-WHERE atTime(trip, '[2020-06-01 03:00:00, 2020-06-01 04:00:00)'::tstzspan) is not null
-),
- 
-flight_traj_time_slice_ascent(icao24, callsign, ascending_trip, ascending_geoaltitude, ascending_vertrate) AS
-(SELECT icao24, callsign,
-atTime(time_slice_trip, sequenceN( atValues(time_slice_geoaltitude, '[3000,8000)'::floatspan), 1)::tstzspan),
-atTime(time_slice_geoaltitude, sequenceN(atValues( time_slice_geoaltitude, '[3000,8000)'::floatspan) ,1)::tstzspan),
-atTime(time_slice_vertrate, sequenceN(atValues (time_slice_geoaltitude, '[3000,8000)'::floatspan) ,1)::tstzspan)
-FROM flight_traj_time_slice
-WHERE 
-atTime(time_slice_trip, sequenceN(
-atValues(time_slice_geoaltitude, '[3000,8000)'::floatspan), 1)::tstzspan) is not null ),
-final_output AS
-(SELECT icao24, callsign,
-getValue(unnest(instants(ascending_geoaltitude))) AS geoaltitude,
-getValue(unnest(instants(ascending_vertrate))) AS vertrate,
-ST_X(getValue(unnest(instants(ascending_trip)))) AS lon,
-ST_Y(getValue(unnest(instants(ascending_trip)))) AS lat
-FROM flight_traj_time_slice_ascent)
-SELECT *
-FROM final_output
-WHERE vertrate IS NOT NULL
-AND geoaltitude IS NOT NULL;
+ WITH TimeAltitude(Period, AltSpan) AS (
+  SELECT tstzspan '[2020-06-01 08:00:00, 2020-06-01 09:00:00)', floatspan '[3000,8000)' ),
+FlightTimeSlice(ICAO24, CallSign, TripTimeSlice, AltTimeSlice) AS (
+  SELECT ICAO24, CallSign, atTime(Flight, Period), atTime(GeoAltitude, Period)
+  FROM Flights, TimeAltitude
+  WHERE atTime(Flight, Period) IS NOT NULL ),
+FlightTimeSliceCruising(ICAO24, CallSign, CruisingTrip, CruisingAltitude) AS (
+  SELECT ICAO24, CallSign,
+    atTime(TripTimeSlice, getTime(atValues(AltTimeSlice, AltSpan))),
+    atValues(AltTimeSlice, AltSpan)
+  FROM FlightTimeSlice, TimeAltitude
+  WHERE atValues(AltTimeSlice, AltSpan) IS NOT NULL AND
+    atTime(TripTimeSlice, getTime(atValues(AltTimeSlice, AltSpan))) IS NOT NULL ),
+Instants(ICAO24, T) AS (
+  SELECT ICAO24, unnest(set(timestamps(CruisingTrip)) +
+    set(timestamps(CruisingAltitude)))
+  FROM FlightTimeSliceCruising
+  GROUP BY ICAO24, CruisingTrip, CruisingAltitude)
+SELECT f.ICAO24, f.CallSign, getValue(atTime(CruisingAltitude, T)) AS Alt,
+ ST_X(getValue(atTime(CruisingTrip, T))::geometry) AS Lon,
+ ST_Y(getValue(atTime(CruisingTrip, T))::geometry) AS Lat, T 
+FROM FlightTimeSliceCruising f, Instants i
+WHERE f.ICAO24 = i.ICAO24 AND
+  getValue(atTime(CruisingAltitude, T)) IS NOT NULL AND
+  getValue(atTime(CruisingTrip, T)) IS NOT NULL
+ORDER BY T;
 
 --------------------------
 
