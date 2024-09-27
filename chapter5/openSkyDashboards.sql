@@ -1,58 +1,8 @@
 =================== DASHBOARD 1 ================
-
+The query is the same for the two panels.
+	
  -- Noise Heatmap
-WITH Sydney(geomsydney)
-   AS (SELECT ST_makeEnvelope(151.3,-33.75,150.93,-34.1,4326)),
-   
-flight_traj_time_slice (icao24, callsign, time_slice_trip, time_slice_geoaltitude, time_slice_vertrate)  
-AS
- (
-       SELECT icao24, callsign, atTime(trip, '[2020-06-01 01:00:00, 2020-06-01 
-        23:00:00)'::tstzspan),
-        atTime(geoaltitude, '[2020-06-01 01:00:00, 2020-06-01 
-        23:00:00)'::tstzspan), 
-        atTime(vertrate,'[2020-06-01 01:00:00, 2020-06-01 
-        23:00:00)'::tstzspan)
-  FROM  flight_traj  , Sydney S 
-  WHERE atTime(trip, '[2020-06-01 01:00:00, 2020-06-01 
-        23:00:00)'::tstzspan) IS NOT NULL AND
-        atGeometry((trip), S.geomsydney) is NOT NULL),
-flight_traj_time_slice_ascent(icao24, callsign, ascending_trip, ascending_geoaltitude, ascending_vertrate) 
-AS
- (SELECT icao24, callsign, atTime(time_slice_trip, sequenceN( 
-       atValues(time_slice_vertrate, '[1,20]'::floatspan),  
-       1)::tstzspan),
-atTime(time_slice_geoaltitude, sequenceN(atValues( 
-      time_slice_vertrate,'[1,20]'::floatspan),1)::tstzspan),
-atTime(time_slice_vertrate, sequenceN(atValues  
-      (time_slice_vertrate, '[1,20]'::floatspan) 
-       ,1)::tstzspan)
-FROM flight_traj_time_slice
-WHERE 
-atTime(time_slice_trip, sequenceN(
-       atValues(time_slice_vertrate, '[1,20]'::floatspan),  
-       1)::tstzspan) IS NOT NULL),
  
-final_output AS
-    (SELECT icao24, callsign,
-getValue(unnest(instants(ascending_geoaltitude))) AS  
-geoaltitude,
-getValue(unnest(instants(ascending_vertrate))) AS 
-vertrate,
-ST_X(getValue(unnest(instants(ascending_trip)))) AS lon,
-ST_Y(getValue(unnest(instants(ascending_trip)))) AS lat
-FROM flight_traj_time_slice_ascent
-)
-
-SELECT *
-FROM final_output
-WHERE vertrate IS NOT NULL AND geoaltitude IS NOT NULL
-AND (lat IS NOT NULL AND lon IS NOT NULL);
-
-
-
---------------------------------
-
 --Altitude of Flights Leaving Sydney
 
  WITH Sydney(SydneyEnv)
