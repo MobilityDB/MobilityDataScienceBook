@@ -199,6 +199,8 @@ ORDER BY T;
 
 -- FLIGHTS TAKING-OFF PANEL
 
+   -- FLIGHTS TAKING-OFF PANEL
+
   -- Span for determining Ascending planes
 WITH AscSpan(Span) AS ( SELECT floatspan '[1,20]' ),
 -- Time period we are interested in
@@ -211,7 +213,7 @@ TargetFlight(ICAO24, CallSign, RestFlight, RestGeoAlt, RestVertRate) AS (
   FROM Flights, TimePeriod
   WHERE atTime(Flight, Period) IS NOT NULL ),
 -- Ascending planes
-FlightsAscent(ICAO24, CallSign, RestGeoAlt, DescFlight, RestVertRate) AS (
+FlightsAscent(ICAO24, CallSign, RestGeoAlt, AscFlight, RestVertRate) AS (
   SELECT ICAO24, CallSign,
     atTime(RestGeoAlt, getTime(atValues(RestVertRate, Span))),
     atTime(RestFlight, getTime(atValues(RestVertRate, Span))),
@@ -222,16 +224,16 @@ FlightsAscent(ICAO24, CallSign, RestGeoAlt, DescFlight, RestVertRate) AS (
     atTime(RestFlight, getTime(atValues(RestVertRate, Span))) IS NOT NULL ),
 Instants(ICAO24, T) AS (
   SELECT ICAO24, unnest(set(timestamps(RestGeoAlt)) +
-    set(timestamps(DescFlight)) + set(timestamps(RestVertRate)))
+    set(timestamps(AscFlight)) + set(timestamps(RestVertRate)))
   FROM  FlightsAscent
-  GROUP BY ICAO24, RestGeoAlt, DescFlight, RestVertRate )
+  GROUP BY ICAO24, RestGeoAlt, AscFlight, RestVertRate )
 SELECT f.ICAO24, f.CallSign, getValue(atTime(RestGeoAlt, T)) AS GeoAltitude,
   getValue(atTime(RestVertRate, T)) AS VertRate,
-  ST_X(getValue(atTime(DescFlight, T))::geometry) AS Lon,
-  ST_Y(getValue(atTime(DescFlight, T))::geometry) AS Lat, T
+  ST_X(getValue(atTime(AscFlight, T))::geometry) AS Lon,
+  ST_Y(getValue(atTime(AscFlight, T))::geometry) AS Lat, T
 FROM FlightsAscent f, Instants i
 WHERE f.ICAO24 = i.ICAO24 AND
-  getValue(atTime(DescFlight, T)) IS NOT NULL AND
+  getValue(atTime(AscFlight, T)) IS NOT NULL AND
   getValue(atTime(RestGeoAlt, T)) IS NOT NULL AND
   getValue(atTime(RestVertRate, T)) IS NOT NULL AND
   getValue(atTime(RestGeoAlt, T)) < 1000
