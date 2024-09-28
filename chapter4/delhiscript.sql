@@ -42,16 +42,16 @@ END $$;
 ALTER TABLE delhiInput
 ADD COLUMN geom geometry(Point,4326);
 
-UPDATE delhiInput SET geom = ST_MakePoint(lon, lat) ;
--- to mobilityDB
-ALTER TABLE delhiInput ADD COLUMN trip_inst tgeompoint;
+UPDATE delhiInput SET geom = ST_Point(lon, lat) ;
+
+ALTER TABLE delhiInput ADD COLUMN tripInst tgeompoint;
 ALTER TABLE delhiInput ADD COLUMN pm1_0_inst tfloat;
 ALTER TABLE delhiInput ADD COLUMN pm2_5_inst tfloat;
 ALTER TABLE delhiInput ADD COLUMN pm10_inst tfloat;
 
-UPDATE delhiInput SET trip_inst = tgeompoint(ST_MakePoint(lon, lat), t),  pm1_0_inst = tfloat(pm1_0, t), pm2_5_inst = tfloat(pm2_5, t), pm10_inst = tfloat(pm10, t);
-
-
+UPDATE delhiInput SET tripInst = tgeompoint(st_transform(geom,7760), t), 
+pm1_0_inst = tfloat(pm1_0, t), 
+pm2_5_inst = tfloat(pm2_5, t), pm10_inst = tfloat(pm10, t);
 
 DROP TABLE IF EXISTS delhiTrips;
 CREATE TABLE delhiTrips (
@@ -61,17 +61,15 @@ CREATE TABLE delhiTrips (
   pm1_0 tfloat,
   pm2_5 tfloat,
   pm10 tfloat,
-trajectory geometry,
+  trajectory geometry,
  primary key(deviceid, Id)
 );
-
-
 
 DO  $$
 DECLARE  
 device CURSOR FOR SELECT  DISTINCT deviceID FROM delhiInput;
 devicetraj CURSOR (key text) FOR 
-SELECT t, pm1_0_inst, pm2_5_inst, pm10_inst, trip_inst
+SELECT t, pm1_0_inst, pm2_5_inst, pm10_inst, tripInst
 FROM delhiinput 
 WHERE deviceID = key
 ORDER BY t;
@@ -102,9 +100,9 @@ LOOP
        END IF;
        Current = myrec.t;
        IF (current-prev > threshold) THEN
-           INSERT INTO delhiTrips  
+          INSERT INTO delhiTrips  
           SELECT myid, deviceId, 
-		  tgeompointseq(array_agg(trip_inst ORDER BY trip_inst)),
+          tgeompointseq(array_agg(tripInst ORDER BY tripInst)),
           tfloatseq(array_agg(pm1_0_inst ORDER BY pm1_0_inst)),
           tfloatseq(array_agg(pm2_5_inst ORDER BY pm2_5_inst)),
           tfloatseq(array_agg(pm10_inst ORDER BY pm10_inst))
@@ -124,11 +122,11 @@ LOOP
 	   IF (prev IS NOT NULL) THEN
 	                INSERT INTO delhiTrips   
           SELECT myid, deviceId, 
-		  tgeompointseq(array_agg(trip_inst ORDER BY trip_inst)),
+		  tgeompointseq(array_agg(tripInst ORDER BY tripInst)),
           tfloatseq(array_agg(pm1_0_inst ORDER BY pm1_0_inst)),
           tfloatseq(array_agg(pm2_5_inst ORDER BY pm2_5_inst)),
           tfloatseq(array_agg(pm10_inst ORDER BY pm10_inst))
-          FROM delhiInput
+          FROM delhiInput 
           WHERE deviceId= mydeviceid AND t >= initial 
 		         AND t <= current  -- current include 
            GROUP BY deviceId;
@@ -138,16 +136,12 @@ LOOP
 END LOOP;
 CLOSE device;
 COMMIT;
-Update delhiTrips  set trip= setSRID( trip, 4326);
-update delhiTrips set trajectory= trajectory(trip);
-delete from delhiTrips where duration(trip) < '10 minute';
-
-COMMIT;
-RAISE NOTICE 'finished';
+ RAISE NOTICE 'finished';
 END;
 $$ LANGUAGE plpgsql;
 
-
+delete from delhiTrips where duration(trip) < '10 minute';
+update delhiTrips set trajectory= trajectory(trip);
 
 CREATE INDEX delhitrips_trip_Idx ON delhiTrips USING SPGist(Trip);
 CREATE INDEX delhitrips_pm1_0_Idx ON delhiTrips USING Gist(PM1_0);
