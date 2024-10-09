@@ -8,5 +8,5 @@ It contains the datasets used in the book alongside with the scripts
 allowing you to input these datasets in PostgreSQL and reproduce the
 examples and exercises in the book.
 
-# riga_vehicle_positions.parquet 
-Contains the parquet files needed to reproduce the real-time visualizations. 
+# Files and Scripts
+riga_vehicle_positions.parquet: Contains the parquet files needed to reproduce the real-time visualizations. 
