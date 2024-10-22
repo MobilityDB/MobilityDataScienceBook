@@ -359,3 +359,32 @@ CREATE TABLE tripsByPoIs AS
 ALTER TABLE tripsByPoIs ADD COLUMN traj geometry;
 UPDATE tripsByPoIs SET traj= trajectory(trip);
 
+
+--=====================================================================
+--Heatmaps
+--=====================================================================
+
+DROP TABLE IF EXISTS tHeatmap;
+CREATE TABLE tHeatmap AS
+    SELECT (grid).point AS cell_geom, (grid).time AS cell_t
+    FROM(
+        SELECT spaceTimeSplit(trip, 10000, interval '1 hour') AS grid
+        FROM Ships) AS tmp;
+--[2024-10-21 12:37:53] 86,591 rows affected in 3 s 542 ms
+
+CREATE TABLE spatialHeatMap AS
+    SELECT cell_geom, count(*)
+    FROM tHeatmap
+    GROUP BY cell_geom;
+
+CREATE TABLE timeHeatMap AS
+    SELECT cell_t, count(*)
+    FROM tHeatmap
+    GROUP BY cell_t;
+
+DROP TABLE IF EXISTS flow;
+CREATE TABLE flow AS
+    SELECT a.id as harbourA, b.id as harbourB, MMSI
+    FROM (harbours a JOIN harbours b ON a.id > b.id) JOIN
+        ships ON (eintersects(trip, a.geom) AND eintersects(trip, b.geom))
+--[2024-10-21 17:01:40] 630 rows affected in 31 m 38 s 77 ms
