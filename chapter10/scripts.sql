@@ -340,11 +340,11 @@ CREATE TABLE Ports AS
 DROP TABLE IF EXISTS tripsByPoIs;
 CREATE TABLE tripsByPoIs AS
     WITH portIntersections AS (
-        SELECT MMSI, PortName, Geom
-        FROM Ports P, Ships S
+        SELECT MMSI, p.name, Geom
+        FROM harbours P, Ships S
         WHERE eintersects(S.Trip, geom)
     ), intersectionAggregates AS (
-        SELECT MMSI, st_collect(geom) AS geom
+        SELECT MMSI, st_union(geom) AS geom
         FROM portIntersections
         GROUP BY MMSI
     ), tripsWithIntersection AS (
@@ -388,3 +388,16 @@ CREATE TABLE flow AS
     FROM (harbours a JOIN harbours b ON a.id > b.id) JOIN
         ships ON (eintersects(trip, a.geom) AND eintersects(trip, b.geom))
 --[2024-10-21 17:01:40] 630 rows affected in 31 m 38 s 77 ms
+
+--=====================================================================
+--Trajectory Similarity
+--=====================================================================
+
+
+SELECT dynTimeWarpDistance(tgeompoint '[Point(0 1)@2001-01-01, Point(4 0)@2001-01-03, Point(5 1)@2001-01-05, Point(9 1)@2001-01-07]',
+tgeompoint '[Point(1 2)@2001-01-01, Point(0 4)@2001-01-03, Point(9 2)@2001-01-05]');
+--11.850716732682386
+
+SELECT frechetDistance(tgeompoint '[Point(0 1)@2001-01-01, Point(4 0)@2001-01-03, Point(5 1)@2001-01-05, Point(9 1)@2001-01-07]',
+tgeompoint '[Point(1 2)@2001-01-01, Point(0 4)@2001-01-03, Point(9 2)@2001-01-05]');
+--5.385164807134504
