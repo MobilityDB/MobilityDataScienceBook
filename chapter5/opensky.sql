@@ -102,7 +102,7 @@ DROP TABLE IF EXISTS SRID3112;
 CREATE TABLE SRID3112(Env) AS
 SELECT ST_MakeEnvelope(93.41, -60.55, 173.34, -8.47,  4326);
 
- DROP TABLE IF EXISTS  FlightsAU;
+ DROP TABLE IF EXISTS  FlightsAust;
 CREATE TABLE FlightsAU(ICAO24, CallSign, FlightPeriod, Flight, Velocity, Heading, 
  VertRate, Alert, GeoAltitude) AS
  SELECT ICAO24, CallSign, FlightPeriod, transform(Flight, 3112)::tgeompoint,
