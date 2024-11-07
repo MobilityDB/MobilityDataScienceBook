@@ -1,7 +1,9 @@
-CREATE EXTENSION PostGIS;
+-- Section 9.2 AIS Data Cleaning
+-- Loading
+CREATE EXTENSION MobilityDB CASCADE;
 
 --loading data (similar to CH5)
-DROP TABLE IF EXISTS AISInput;
+DROP TABLE AISInput;
 CREATE TABLE AISInput(
 T timestamp,
 TypeOfMobile varchar(50),
@@ -58,8 +60,6 @@ UPDATE AISInput SET
   GeomProj = ST_Transform(Geom, 25832);
 -- 15,512,927 rows affected in 1 m 5 s 145 ms
 
-
-
 -- Take a sample: For big datasets, one would need to take a manageable sample for exploring errors and building the
 -- cleaning pipleline. In this example, we shall focus on the morning hours between 9h00 and 10h59.
 DROP TABLE IF EXISTS AISInputSample;
@@ -102,11 +102,10 @@ SELECT
   COUNT(SizeB) AS SizeB_non_null,
   COUNT(SizeC) AS SizeC_non_null,
   COUNT(SizeD) AS SizeD_non_null
-FROM AISInput;
+FROM AISInputSample;
 
---| total\_rows | t\_non\_null | typeofmobile\_non\_null | mmsi\_non\_null | latitude\_non\_null | longitude\_non\_null | navigationalstatus\_non\_null | rot\_non\_null | sog\_non\_null | cog\_non\_null | heading\_non\_null | imo\_non\_null | callsign\_non\_null | name\_non\_null | shiptype\_non\_null | cargotype\_non\_null | width\_non\_null | length\_non\_null | typeofpositionfixingdevice\_non\_null | draught\_non\_null | destination\_non\_null | eta\_non\_null | datasourcetype\_non\_null | sizea\_non\_null | sizeb\_non\_null | sizec\_non\_null | sized\_non\_null |
---| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
---| 15512927 | 15512927 | 15512927 | 15512927 | 15320597 | 15320597 | 15512927 | 10869176 | 14130040 | 13286363 | 12198238 | 15512927 | 15512927 | 14275254 | 15512927 | 2515603 | 13953282 | 13953914 | 15512927 | 11666139 | 15512927 | 10139002 | 15512927 | 13922250 | 13827225 | 13798769 | 13782182 |
+--total_rows,t_non_null,typeofmobile_non_null,mmsi_non_null,latitude_non_null,longitude_non_null,navigationalstatus_non_null,rot_non_null,sog_non_null,cog_non_null,heading_non_null,imo_non_null,callsign_non_null,name_non_null,shiptype_non_null,cargotype_non_null,width_non_null,length_non_null,typeofpositionfixingdevice_non_null,draught_non_null,destination_non_null,eta_non_null,datasourcetype_non_null,sizea_non_null,sizeb_non_null,sizec_non_null,sized_non_null
+--1334271,1334271,1334271,1334271,1319025,1319025,1334271,885998,1216567,1145613,1035586,1334271,1334271,1225256,1334271,199278,1199709,1199751,1334271,993618,1334271,852560,1334271,1196868,1186757,1186085,1187354
 
 -- The queries above assumed that NULL values are encoded as NULL in the data. Sometimes this is not the case. Other
 -- placeholders can be used in the data to convey NULL. To identify what placeholders (like "unknown" or "unknown_value")
@@ -117,24 +116,39 @@ FROM AISInput;
 -- You can run a set of SQL queries to quickly identify common placeholders such as "unknown", "n/a", "none", or
 -- "not available", as follows:
 
-SELECT
-  DISTINCT NavigationalStatus AS unique_values
-FROM
-  AISInputSample
-WHERE
-  NavigationalStatus ILIKE '%unknown%' OR
-  NavigationalStatus ILIKE '%n/a%' OR
-  NavigationalStatus ILIKE '%none%' OR
-  NavigationalStatus ILIKE '%not available%'
-LIMIT 100;
+SELECT DISTINCT Destination AS UniqueValues
+FROM AISInputSample
+WHERE Destination ILIKE '%none%' OR Destination ILIKE '%n/a%' OR
+  Destination ILIKE '%not available%' OR Destination ILIKE '%unknown%';
+--N/A
+--THYBOROEN/AGGER
+--Unknown
+--UNKNOWN
 
---| unique\_values |
---| :--- |
---| Unknown value |
+
 
 -- 2. Automated Script to Detect NULL Placeholders
 -- When dealing with a large number of columns and a potential variety of unknown placeholders, you might write a more
 -- automated SQL script that aggregates the most frequent values of the columns:
+WITH ColsVals(ColumnName, ColumnValue) AS (
+  SELECT 'TypeOfMobile', TypeOfMobile FROM AISInputSample UNION ALL
+  SELECT 'NavigationalStatus', NavigationalStatus FROM AISInputSample UNION ALL
+  SELECT 'IMO', IMO FROM AISInputSample UNION ALL
+  SELECT 'CallSign', CallSign FROM AISInputSample UNION ALL
+  SELECT 'Name', Name FROM AISInputSample UNION ALL
+  SELECT 'ShipType', ShipType FROM AISInputSample UNION ALL
+  SELECT 'CargoType', CargoType FROM AISInputSample UNION ALL
+  SELECT 'TypeOfPositionFixingDevice', TypeOfPositionFixingDevice
+  FROM AISInputSample UNION ALL
+  SELECT 'Destination', Destination FROM AISInputSample UNION ALL
+  SELECT 'ETA', ETA FROM AISInputSample UNION ALL
+  SELECT 'DataSourceType', DataSourceType FROM AISInputSample )
+SELECT ColumnName, ColumnValue, COUNT(*) AS Frequency
+FROM ColsVals
+WHERE ColumnValue IS NOT NULL
+GROUP BY ColumnName, ColumnValue
+ORDER BY Frequency DESC;
+
 SELECT
   column_name,
   value,
@@ -183,23 +197,20 @@ LIMIT 100;
 -- By scanning the results fo this query, we identify the following placeholders:
 | column\_name | value | frequency |
 | :--- | :--- | :--- |
-| IMO | Unknown | 7626009 |
-| Destination | Unknown | 5429774 |
-| navigationalStatus | Unknown value | 3606172 |
-| TypeOfPositionFixingDevice | Undefined | 2172854 |
-| CargoType | No additional information | 1833168 |
-| ShipType | Undefined | 1572553 |
-| Callsign | Unknown | 1464857 |
+| IMO | Unknown | 555622 |
+| Destination | Unknown | 344362 |
+| navigationalStatus | Unknown value | 211223 |
+| ShipType | Undefined | 136437 |
 
 -- Depending on the dataset, you need to ensure that any identified placeholders like 'unknown' are indeed meant to be
 -- interpreted as NULL. Sometimes, terms like 'unknown' might be legitimate data points depending on the context. In the
 -- results of the above query, there were other less clear situations, that can raise argument whether or not they
 -- should be replaced by NULL. For this example, we leave them unchanged.
 
-| ShipType | Other | 710664 |
-| ETA | 01/01/2025 00:00:00 | 284187 |
-| CargoType | Reserved for future use | 242195 |
-| navigationalStatus | Reserved for future amendment \[HSC\] | 153832 |
+| ShipType | Other | 62958 |
+| ETA | 01/01/2025 00:00:00 | 23285 |
+| CargoType | Reserved for future use | 21517 |
+| navigationalStatus | Reserved for future amendment \[HSC\] | 15530 |
 
 -- Based on the identified non-standard placeholders for NULL in your database from the provided table, you can write
 -- SQL UPDATE statements to replace these placeholders with actual NULL values in each specified column of your AISInput
@@ -207,50 +218,25 @@ LIMIT 100;
 
 UPDATE AISInputSample
 SET
-  navigationalStatus = CASE
-    WHEN navigationalStatus = 'Unknown value' THEN NULL
-    ELSE navigationalStatus
-  END,
-  IMO = CASE
-    WHEN IMO = 'Unknown' THEN NULL
-    ELSE IMO
-  END,
-  Destination = CASE
-    WHEN Destination = 'Unknown' THEN NULL
-    ELSE Destination
-  END,
-  TypeOfPositionFixingDevice = CASE
-    WHEN TypeOfPositionFixingDevice = 'Undefined' THEN NULL
-    ELSE TypeOfPositionFixingDevice
-  END,
-  CargoType = CASE
-    WHEN CargoType = 'No additional information' THEN NULL
-    ELSE CargoType
-  END,
-  ShipType = CASE
-    WHEN ShipType = 'Undefined' THEN NULL
-    ELSE ShipType
-  END,
-  Callsign = CASE
-    WHEN Callsign = 'Unknown' THEN NULL
-    ELSE Callsign
-  END
-WHERE
-  navigationalStatus = 'Unknown value' OR
-  IMO = 'Unknown' OR
-  Destination = 'Unknown' OR
-  TypeOfPositionFixingDevice = 'Undefined' OR
-  CargoType = 'No additional information' OR
-  ShipType = 'Undefined' OR
-  Callsign = 'Unknown';
--- 753,474 rows affected in 3 s 989 ms
+  IMO = CASE WHEN IMO = 'Unknown' THEN NULL ELSE IMO END,
+  Destination = CASE WHEN Destination = 'Unknown' THEN NULL ELSE
+    Destination END,
+  NavigationalStatus = CASE WHEN NavigationalStatus = 'Unknown value' THEN
+    NULL ELSE NavigationalStatus END,
+  ShipType = CASE WHEN ShipType = 'Undefined' THEN NULL ELSE ShipType END,
+  CargoType = CASE WHEN CargoType = 'No additional information' THEN NULL
+    ELSE CargoType END,
+  CallSign = CASE WHEN CallSign = 'Unknown' THEN NULL ELSE CallSign END
+WHERE IMO = 'Unknown' OR Destination = 'Unknown' OR
+  NavigationalStatus = 'Unknown value' OR ShipType = 'Undefined' OR
+  CargoType = 'No additional information' OR CallSign = 'Unknown';
+-- 735,725 rows affected in 2 s 276 ms
 
 -- Now recalculate the NULL statistics as in the beginning of this section, we clearly get bigger number of NULL values,
 -- which more accurately reflect the status of the data.
 
---| total\_rows | t\_non\_null | typeofmobile\_non\_null | mmsi\_non\_null | latitude\_non\_null | longitude\_non\_null | navigationalstatus\_non\_null | rot\_non\_null | sog\_non\_null | cog\_non\_null | heading\_non\_null | imo\_non\_null | callsign\_non\_null | name\_non\_null | shiptype\_non\_null | cargotype\_non\_null | width\_non\_null | length\_non\_null | typeofpositionfixingdevice\_non\_null | draught\_non\_null | destination\_non\_null | eta\_non\_null | datasourcetype\_non\_null | sizea\_non\_null | sizeb\_non\_null | sizec\_non\_null | sized\_non\_null |
---| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
---| 15512927 | 15512927 | 15512927 | 15512927 | 15320597 | 15320597 | 15512927 | 10869176 | 14130040 | 13286363 | 12198238 | 15512927 | 15512927 | 14275254 | 15512927 | 2515603 | 13953282 | 13953914 | 15512927 | 11666139 | 15512927 | 10139002 | 15512927 | 13922250 | 13827225 | 13798769 | 13782182 |
+--total_rows,t_non_null,typeofmobile_non_null,mmsi_non_null,latitude_non_null,longitude_non_null,navigationalstatus_non_null,rot_non_null,sog_non_null,cog_non_null,heading_non_null,imo_non_null,callsign_non_null,name_non_null,shiptype_non_null,cargotype_non_null,width_non_null,length_non_null,typeofpositionfixingdevice_non_null,draught_non_null,destination_non_null,eta_non_null,datasourcetype_non_null,sizea_non_null,sizeb_non_null,sizec_non_null,sized_non_null
+--1334271,1334271,1334271,1334271,1319025,1319025,1123048,885998,1216567,1145613,1035586,778649,1212419,1225256,1197834,65865,1199709,1199751,1334271,993618,989909,852560,1334271,1196868,1186757,1186085,1187354
 
 
 -- Consistency of ship data
@@ -324,3 +310,26 @@ WHERE
 -- for data cleaning tasks. These tools can automatically detect patterns or dependencies in the data, allow users to
 -- define rules based on these dependencies, and perform cleansing operations such as normalizing data, correcting
 -- anomalies, and filling missing values according to the observed functional dependencies.
+
+SELECT MMSI, IMO
+FROM AISInputSample
+WHERE MMSI = 211291170;
+
+
+-- Cleaning Voyage-Related Data
+
+WITH DestinationMapping AS (
+  SELECT MMSI,
+    MODE() WITHIN GROUP (ORDER BY Destination) AS MostFrequentDestination
+  FROM AISInputSample
+  WHERE MMSI IN (
+    SELECT DISTINCT MMSI
+    FROM AISInputSample
+    WHERE Destination IS NULL )
+  GROUP BY MMSI )
+UPDATE AISInputSample
+SET Destination = MostFrequentDestination
+FROM DestinationMapping
+WHERE AISInputSample.MMSI = DestinationMapping.MMSI AND
+  AISInputSample.Destination IS NULL AND MostFrequentDestination IS NOT NULL;
+
