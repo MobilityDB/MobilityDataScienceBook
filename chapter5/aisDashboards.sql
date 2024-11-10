@@ -77,17 +77,17 @@ Same query as above, with a different graphic.
 -- NUMBER OF BOATS MOVING THOUGH A GIVEN AREA PANEL
 
 
-WITH Ports(PortName, PortEnv, Long, Lat) AS (
+WITH Ports(PortName, PortEnv, Lon, Lat) AS (
 SELECT * FROM (VALUES
 ('Rodby', ST_MakeEnvelope(651135, 6058230, 651422, 6058548, 25832),
 11.06, 54.53),
 ('Puttgarden', ST_MakeEnvelope(644339, 6042108, 644896, 6042487, 25832),
 11.36, 54.64)) AS p )
 SELECT p.PortName, SUM(numSequences(atGeometry(s.Trip, p.PortEnv))) AS
-tripsIntersectsPort, p.Long, p.Lat
+tripsIntersectsPort, p.Lon, p.Lat
 FROM Ports p, Ships s
 WHERE ST_Intersects(trajectory(s.Trip), p.PortEnv) IS NOT NULL
-GROUP BY p.PortName, p.Long, p.Lat;
+GROUP BY p.PortName, p.Lon, p.Lat;
 -------------------------------------------------------------
 
 -- Two Boats Close to Each Other Panel
