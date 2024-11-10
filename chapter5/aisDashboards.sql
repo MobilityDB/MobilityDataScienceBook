@@ -23,12 +23,13 @@ FROM Ships;
 -- Destination Ports Panel
 
 WITH Destinations AS (
-SELECT MMSI, Destination, COUNT(*)
+SELECT MMSI, Destination 
 FROM AISInput
 WHERE Destination IS NOT NULL
 GROUP BY MMSSI, Destination )
 SELECT Destination, COUNT(*)
 FROM Destinations
+WHERE Destination !='Unknown'
 GROUP BY Destination
 ORDER BY COUNT(*) DESC
 
