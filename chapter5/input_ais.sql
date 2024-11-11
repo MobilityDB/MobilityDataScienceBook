@@ -53,17 +53,24 @@ BEGIN
   FROM '/home/esteban/src/ais/aisdk-2024-03-01.csv' DELIMITER ',' CSV HEADER;
 
   RAISE INFO 'Updating AISInput table ...';
+
+  -- Set to NULL 'undefined' values and add geometry to the records
+  UPDATE AISInput SET
+    NavigationalStatus = CASE WHEN NavigationalStatus = 'Unknown value' THEN
+      NULL ELSE NavigationalStatus END,
+    IMO = CASE WHEN IMO = 'Unknown' THEN NULL ELSE IMO END,
+    ShipType = CASE WHEN ShipType = 'Undefined' THEN NULL END,
+    TypeOfPositionFixingDevice = CASE WHEN TypeOfPositionFixingDevice =
+      'Undefined' THEN NULL ELSE TypeOfPositionFixingDevice END
+  WHERE NavigationalStatus = 'Unknown value' OR 
+    IMO = 'Unknown' OR ShipType = 'Undefined' OR
+    TypeOfPositionFixingDevice = 'Undefined';
   -- Set to NULL out-of-range values of latitude and longitude
   UPDATE AISInput
   SET Latitude = NULL, Longitude = NULL
   WHERE Longitude NOT BETWEEN -180 AND 180 OR Latitude NOT BETWEEN -90 AND 90;
-  -- Set to NULL 'undefined' values and add geometry to the records
+  -- Create point geometry 
   UPDATE AISInput SET
-    NavigationalStatus = CASE NavigationalStatus WHEN 'Unknown value' THEN NULL END,
-    IMO = CASE IMO WHEN 'Unknown' THEN NULL END,
-    ShipType = CASE ShipType WHEN 'Undefined' THEN NULL END,
-    TypeOfPositionFixingDevice = CASE TypeOfPositionFixingDevice
-      WHEN 'Undefined' THEN NULL END,
     Geom = ST_SetSRID(ST_MakePoint(Longitude, Latitude), 4326);
 
   -- Filter out duplicate timestamps and valid but out-of-range values of
