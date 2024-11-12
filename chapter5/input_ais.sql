@@ -53,18 +53,6 @@ BEGIN
   FROM '/home/esteban/src/ais/aisdk-2024-03-01.csv' DELIMITER ',' CSV HEADER;
 
   RAISE INFO 'Updating AISInput table ...';
-
-  -- Set to NULL 'undefined' values and add geometry to the records
-  UPDATE AISInput SET
-    NavigationalStatus = CASE WHEN NavigationalStatus = 'Unknown value' THEN
-      NULL ELSE NavigationalStatus END,
-    IMO = CASE WHEN IMO = 'Unknown' THEN NULL ELSE IMO END,
-    ShipType = CASE WHEN ShipType = 'Undefined' THEN NULL END,
-    TypeOfPositionFixingDevice = CASE WHEN TypeOfPositionFixingDevice =
-      'Undefined' THEN NULL ELSE TypeOfPositionFixingDevice END
-  WHERE NavigationalStatus = 'Unknown value' OR 
-    IMO = 'Unknown' OR ShipType = 'Undefined' OR
-    TypeOfPositionFixingDevice = 'Undefined';
   -- Set to NULL out-of-range values of latitude and longitude
   UPDATE AISInput
   SET Latitude = NULL, Longitude = NULL
@@ -72,6 +60,24 @@ BEGIN
   -- Create point geometry 
   UPDATE AISInput SET
     Geom = ST_SetSRID(ST_MakePoint(Longitude, Latitude), 4326);
+  -- Set to NULL 'undefined' values and add geometry to the records
+  UPDATE AISInputSample SET
+    IMO = CASE WHEN IMO = 'Unknown' THEN NULL ELSE IMO END,
+    Destination = CASE WHEN Destination ILIKE 'Unknown' THEN NULL ELSE
+      Destination END,
+    NavigationalStatus = CASE WHEN NavigationalStatus = 'Unknown value' THEN
+      NULL ELSE NavigationalStatus END,
+    ShipType = CASE WHEN ShipType = 'Undefined' OR ShipType = 'Other' THEN
+      NULL ELSE ShipType END,
+    CargoType = CASE WHEN CargoType = 'No additional information' THEN
+      NULL ELSE CargoType END,
+    CallSign = CASE WHEN CallSign = 'Unknown' THEN NULL ELSE CallSign END,
+    TypeOfPositionFixingDevice = CASE WHEN TypeOfPositionFixingDevice = 'Undefined' 
+      THEN NULL ELSE TypeOfPositionFixingDevice END
+  WHERE IMO = 'Unknown' OR Destination ILIKE 'Unknown' OR 
+    NavigationalStatus = 'Unknown value' OR ShipType = 'Undefined' OR 
+    ShipType = 'Other' OR CargoType = 'No additional information' OR 
+    CallSign = 'Unknown' OR TypeOfPositionFixingDevice = 'Undefined';
 
   -- Filter out duplicate timestamps and valid but out-of-range values of
   -- latitude and longitude
