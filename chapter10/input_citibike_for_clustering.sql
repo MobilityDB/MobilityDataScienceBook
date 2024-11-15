@@ -67,7 +67,7 @@ CREATE INDEX citibikeInput_started_at_idx ON citibikeInput USING btree(started_a
 CREATE INDEX citibikeInput_ended_at_idx ON citibikeInput USING btree(ended_at); 
 
 DROP TABLE IF EXISTS time_bins;
-CREATE TABLE time_bins(starttime, stoptime) AS 
+CREATE TABLE time_bins(start_time, stoptime) AS 
 SELECT h, h + interval '30 minutes'
 FROM generate_series(timestamptz '2024-03-01 00:00:00',
   timestamptz '2024-03-31 23:30:00', interval '30 minutes') AS h;
@@ -78,32 +78,32 @@ FROM generate_series(timestamptz '2024-03-01 00:00:00',
 
 
 DROP TABLE IF EXISTS station_in;
-CREATE TABLE station_in(station_id, starttime, in_count) AS
-SELECT end_station_id, t.starttime, COUNT(*)
+CREATE TABLE station_in(station_id, start_time, in_count) AS
+SELECT end_station_id, t.start_time, COUNT(*)
 FROM time_bins t, citibikeInput c
-WHERE t.starttime <= c.ended_at AND c.ended_at < t.stoptime
-GROUP BY end_station_id, t.starttime;
+WHERE t.start_time <= c.ended_at AND c.ended_at < t.stoptime
+GROUP BY end_station_id, t.start_time;
 
 DROP TABLE IF EXISTS station_out;
-CREATE TABLE station_out(station_id, starttime, out_count) AS
-SELECT start_station_id, t.starttime, COUNT(*)
+CREATE TABLE station_out(station_id, start_time, out_count) AS
+SELECT start_station_id, t.start_time, COUNT(*)
 FROM time_bins t, citibikeInput c
-WHERE t.starttime <= c.started_at AND c.started_at < t.stoptime
-GROUP BY start_station_id, t.starttime;
+WHERE t.start_time <= c.started_at AND c.started_at < t.stoptime
+GROUP BY start_station_id, t.start_time;
 
 DROP TABLE IF EXISTS station_flow;
 CREATE TABLE station_flow AS
-WITH StationTimeBins(station_id, starttime) AS (
-  SELECT station_id, starttime
+WITH StationTimeBins(station_id, start_time) AS (
+  SELECT station_id, start_time
   FROM station_information, time_bins ),
-Temp1(station_id, starttime, in_count) AS (
-  SELECT s.station_id, s.starttime, i.in_count
+Temp1(station_id, start_time, in_count) AS (
+  SELECT s.station_id, s.start_time, i.in_count
   FROM StationTimeBins s LEFT OUTER JOIN station_in i
-    ON s.station_id = i.station_id AND s.starttime = i.starttime ),
-Temp2(station_id, starttime, in_count, out_count) AS (
-  SELECT t.station_id, t.starttime, t.in_count, o.out_count
+    ON s.station_id = i.station_id AND s.start_time = i.start_time ),
+Temp2(station_id, start_time, in_count, out_count) AS (
+  SELECT t.station_id, t.start_time, t.in_count, o.out_count
   FROM Temp1 t LEFT OUTER JOIN station_out o
-    ON t.station_id = o.station_id AND t.starttime = o.starttime )
+    ON t.station_id = o.station_id AND t.start_time = o.start_time )
 SELECT * FROM Temp2 WHERE in_count IS NOT NULL OR out_count IS NOT NULL;
 
 UPDATE station_flow SET
@@ -208,39 +208,39 @@ CREATE INDEX citibikeInput_started_at_idx ON citibikeInput USING btree(started_a
 CREATE INDEX citibikeInput_ended_at_idx ON citibikeInput USING btree(ended_at); 
 
 DROP TABLE IF EXISTS time_bins;
-CREATE TABLE time_bins(starttime, stoptime) AS 
+CREATE TABLE time_bins(start_time, stoptime) AS 
 SELECT h, h + interval '30 minutes'
 FROM generate_series(timestamptz '2024-03-01 00:00:00',
   timestamptz '2024-03-31 23:30:00', interval '30 minutes') AS h;
  
 
 DROP TABLE IF EXISTS station_in;
-CREATE TABLE station_in(station_id, starttime, in_count) AS
-SELECT end_station_id, t.starttime, COUNT(*)
+CREATE TABLE station_in(station_id, start_time, in_count) AS
+SELECT end_station_id, t.start_time, COUNT(*)
 FROM time_bins t, citibikeInput c
-WHERE t.starttime <= c.ended_at AND c.ended_at < t.stoptime
-GROUP BY end_station_id, t.starttime;
+WHERE t.start_time <= c.ended_at AND c.ended_at < t.stoptime
+GROUP BY end_station_id, t.start_time;
 
 DROP TABLE IF EXISTS station_out;
-CREATE TABLE station_out(station_id, starttime, out_count) AS
-SELECT start_station_id, t.starttime, COUNT(*)
+CREATE TABLE station_out(station_id, start_time, out_count) AS
+SELECT start_station_id, t.start_time, COUNT(*)
 FROM time_bins t, citibikeInput c
-WHERE t.starttime <= c.started_at AND c.started_at < t.stoptime
-GROUP BY start_station_id, t.starttime;
+WHERE t.start_time <= c.started_at AND c.started_at < t.stoptime
+GROUP BY start_station_id, t.start_time;
 
 DROP TABLE IF EXISTS station_flow;
 CREATE TABLE station_flow AS
-WITH StationTimeBins(station_id, starttime) AS (
-  SELECT station_id, starttime
+WITH StationTimeBins(station_id, start_time) AS (
+  SELECT station_id, start_time
   FROM station_information, time_bins ),
-Temp1(station_id, starttime, in_count) AS (
-  SELECT s.station_id, s.starttime, i.in_count
+Temp1(station_id, start_time, in_count) AS (
+  SELECT s.station_id, s.start_time, i.in_count
   FROM StationTimeBins s LEFT OUTER JOIN station_in i
-    ON s.station_id = i.station_id AND s.starttime = i.starttime ),
-Temp2(station_id, starttime, in_count, out_count) AS (
-  SELECT t.station_id, t.starttime, t.in_count, o.out_count
+    ON s.station_id = i.station_id AND s.start_time = i.start_time ),
+Temp2(station_id, start_time, in_count, out_count) AS (
+  SELECT t.station_id, t.start_time, t.in_count, o.out_count
   FROM Temp1 t LEFT OUTER JOIN station_out o
-    ON t.station_id = o.station_id AND t.starttime = o.starttime )
+    ON t.station_id = o.station_id AND t.start_time = o.start_time )
 SELECT * FROM Temp2 WHERE in_count IS NOT NULL OR out_count IS NOT NULL;
 
 UPDATE station_flow SET
