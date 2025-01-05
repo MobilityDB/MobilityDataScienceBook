@@ -17,13 +17,8 @@ FROM '/Users/avaisman/tmp/DataMisc/NYCBike1-24/202403-citibike-tripdata.csv'
 DELIMITER ',' CSV HEADER;
 
 UPDATE citibikeInput SET 
-  start_point = ST_Point(start_lng, start_lat, 4326),
-  end_point = ST_Point(end_lng, end_lat, 4326);
-
-UPDATE citibikeInput SET 
- start_point = ST_Transform(start_point, 32118);
-UPDATE citibikeInput SET 
- start_point = ST_Transform(end_point, 32118);
+  start_point = ST_Transform(ST_Point(start_lng, start_lat, 4326), 32118),
+  end_point = ST_Transform(ST_Point(end_lng, end_lat, 4326), 32118);
 
 /******************************************************************************/
  
@@ -54,10 +49,7 @@ WHERE end_station_id NOT IN (
 ORDER BY end_station_id;
 
 UPDATE station_information 
-SET geom = ST_Point(station_lng, station_lat, 4326);
-  
-UPDATE station_information 
- SET geom = ST_Transform(geom, 32118);
+SET geom = ST_Transform(ST_Point(station_lng, station_lat, 4326), 32118);
   
 /*****************************************************************************/
 
@@ -159,13 +151,8 @@ DELIMITER ',' CSV HEADER;
  
  
 UPDATE citibikeInput SET 
-  start_point = ST_Point(start_lng, start_lat, 4326),
-  end_point = ST_Point(end_lng, end_lat, 4326);
-
-UPDATE citibikeInput SET 
- start_point = ST_Transform(start_point, 32118);
-UPDATE citibikeInput SET 
- start_point = ST_Transform(end_point, 32118);
+  start_point = ST_Transform(ST_Point(start_lng, start_lat, 4326), 32118),
+  end_point = ST_Transform(ST_Point(end_lng, end_lat, 4326), 32118);
 
 
 DROP TABLE IF EXISTS station_information;

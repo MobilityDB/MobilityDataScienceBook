@@ -16,10 +16,9 @@ BEGIN
   EXECUTE sql_str;
   -- Create the partitioned table
   sql_str = 'CREATE TABLE ' || table_name || '_tile (
-      tripId int, vehId int, day date, tileId int,
-      seqNo int, sourceNode bigint, targetNode bigint, 
-      trip tgeompoint, trajectory geometry,
-      UNIQUE (vehId, day, tileId, seqNo)
+      tripId int, vehicleId int, startDate date, tileId int,
+      seqNo int, trip tgeompoint, trajectory geometry,
+      UNIQUE (vehicleId, startDate, tileId, seqNo)
     ) PARTITION BY LIST(tileId);';
   EXECUTE sql_str;
   -- Loop for each tile
@@ -33,9 +32,8 @@ BEGIN
     EXECUTE sql_str;
     -- Fill the table for the partition
     sql_str = 'INSERT INTO ' || table_name || '_tile_t' || i || ' ' ||
-      '(tripId, vehId, day, tileId, seqNo, sourceNode, targetNode, trip)' 
-      'SELECT tripId, vehId, day, tileId, seqNo, sourceNode, targetNode,
-        atStbox(trip, tile)
+      '(tripId, vehicleId, startDate, tileId, seqNo, trip)' 
+      'SELECT tripId, vehicleId, startDate, tileId, seqNo, atStbox(trip, tile)
        FROM ' || table_name || ', ' || grid_table || ' 
        WHERE tileId = ' || i || ' AND atStbox(trip, tile) IS NOT NULL;';
     EXECUTE sql_str;

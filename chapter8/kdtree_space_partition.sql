@@ -122,6 +122,7 @@ DECLARE
   xMinBound float;
   yMinBound float;
   targetFactor float;
+  tableName text;
 BEGIN
   -- Compute the extent, the minimum/maximum of the other dimension and the
   -- SRID of the dataset
@@ -166,10 +167,13 @@ BEGIN
   -- Create the tiles table
   RAISE INFO '============================';
   RAISE INFO 'Create the tiles table ...';
-  DROP TABLE IF EXISTS KdTiles;
-  CREATE TABLE KdTiles(TileId int, Tile stbox, geom geometry);
+  tableName = 'KdTiles_' || noLevels;
+  EXECUTE 'DROP TABLE IF EXISTS ' || tableName || ';';
+  EXECUTE 'CREATE TABLE ' || tableName || 
+    '(TileId int, Tile stbox, geom geometry);';
   FOR i IN 1..array_length(tiles, 1) LOOP
-    INSERT INTO KdTiles VALUES (i, tiles[i], ST_Boundary(tiles[i]::geometry));
+    EXECUTE 'INSERT INTO ' || tableName || 
+      ' VALUES (i, tiles[i], ST_Boundary(tiles[i]::geometry));';
   END LOOP;
   RETURN 'The End';
 END;

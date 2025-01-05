@@ -4,7 +4,9 @@
  * Currently the script does not take into account the Z dimension
  *****************************************************************************/
 
-  SELECT NULL AS "Creating table AllPoints ...";
+DO $$
+BEGIN
+  RAISE NOTICE 'Creating table AllPoints ...';
   DROP TABLE IF EXISTS AllPoints;
   CREATE TABLE AllPoints(Point) AS
   WITH Instants(Inst) AS (
@@ -13,7 +15,7 @@
   SELECT getValue(Inst)
   FROM Instants;
 
-  SELECT NULL AS "Creating table XTiles ...";
+  RAISE NOTICE 'Creating table XTiles ...';
   DROP TABLE IF EXISTS XTiles;
   CREATE TABLE XTiles(XTileId, XSpan) AS
   WITH Tiles1(TileId, X) AS (
@@ -28,7 +30,7 @@
   FROM Tiles2
   WHERE RowNo = 1;
 
-  SELECT NULL AS "Creating table YTiles ...";
+  RAISE NOTICE 'Creating table YTiles ...';
   DROP TABLE IF EXISTS YTiles;
   CREATE TABLE YTiles(YTileId, YSpan) AS
   WITH Tiles1(TileId, Y) AS (
@@ -43,7 +45,7 @@
   FROM Tiles2
   WHERE RowNo = 1;
 
-  SELECT NULL AS "Creating table AdaptiveGrid ...";
+  RAISE NOTICE 'Creating table AdaptiveGrid ...';
   DROP TABLE IF EXISTS AdaptiveGrid;
   CREATE TABLE AdaptiveGrid(TileId, RowNo, ColNo, Tile, Geom) AS
   WITH TableSRID(SRID) AS (
@@ -57,3 +59,5 @@
     ORDER BY YTileId, XTileId )
   SELECT TileId, RowNo, ColNo, Tile, Tile::geometry
   FROM Tiles;
+END;
+$$ LANGUAGE plpgsql;
