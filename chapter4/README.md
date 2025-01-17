@@ -27,5 +27,5 @@ examples and exercises in the book.
 - For Figures 4.4 - 4.8, see `timehistogramSalinity.ipynb`.
 - For Figures 4.10 & 4.12, see `2dtimeshartsalinity-andTimeHistogram.ipynb`.
 - For Figure 4.11, see `ganttchart.ipynb`.
-- For the Traffic Analysis in Singapore, see `singaporeclusteringandheatmap.ipynb`.
-- For the Traffic Analysis in Jakarta, see `Jakarta-heatmap.ipynb`
+- For the Traffic Analysis in Singapore, to display the heatmap and perform k-means and dbscan clustering, see `singaporeclusteringandheatmap.ipynb`.
+- For the Traffic Analysis in Jakarta, to display the heatmap, see `Jakarta-heatmap.ipynb`
