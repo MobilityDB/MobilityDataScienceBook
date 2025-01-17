@@ -16,7 +16,7 @@ examples and exercises in the book.
     - singapur_input.sql
     - jakarta.sql
     - jakarta_input.sql
-- For Figures 4.29 - 4.31, related to the Air Quality Analysis in Delhi, the data can be downloaded from Processing & data ingestion on this dataset occurs in the following files:
+- For Figures 4.29 - 4.31, related to the Air Quality Analysis in Delhi, the data can be downloaded from https://www.cse.iitd.ac.in/pollutiondata/delhi/download. Processing & data ingestion on this dataset occurs in the following files:
     - delhiscript.sql
     - delhi_input.sql
 
