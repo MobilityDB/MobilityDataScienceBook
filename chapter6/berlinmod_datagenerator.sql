@@ -493,7 +493,7 @@ BEGIN
   curPos = p1;
   t = startTime;
   curSpeed = 0;
-  instants[1] = tgeompoint_inst(p1, t);
+  instants[1] = tgeompoint(p1, t);
   l = 2;
   noEdges = array_length(edges, 1);
   -- Loop for every edge
@@ -655,7 +655,7 @@ BEGIN
           twSumSpeed = twSumSpeed + (travelTime * curSpeed);
           frac = frac + 1;
         END IF;
-        instants[l] = tgeompoint_inst(curPos, t);
+        instants[l] = tgeompoint(curPos, t);
         l = l + 1;
       END LOOP;
       p1 = p2;
@@ -678,7 +678,7 @@ BEGIN
         IF messages = 'debug' THEN
           RAISE INFO '      Stop at crossing -> Waiting for % seconds', round(waitTime::numeric, 3);
         END IF;
-        instants[l] = tgeompoint_inst(curPos, t);
+        instants[l] = tgeompoint(curPos, t);
         l = l + 1;
       END IF;
     END IF;
@@ -693,7 +693,7 @@ BEGIN
     RAISE INFO '      Time-weighted average speed: % Km/h',
       round((twSumSpeed / (totalTravelTime + totalWaitTime))::numeric, 3);
   END IF;
-  RETURN tgeompoint_seq(instants, true, true, true);
+  RETURN tgeompointseq(instants, true, true, true);
   -- RETURN instants;
 END;
 $$ LANGUAGE plpgsql STRICT;
