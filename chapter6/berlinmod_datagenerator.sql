@@ -1655,9 +1655,9 @@ BEGIN
 END; $$;
 
 /*
-select berlinmod_generate();
-select berlinmod_generate(scaleFactor := 0.005);
-select berlinmod_generate(noVehicles := 2, noDays := 2);
+select berlinmod_datagenerator();
+select berlinmod_datagenerator(scaleFactor := 0.005);
+select berlinmod_datagenerator(noVehicles := 2, noDays := 2);
 */
 
 -------------------------------------------------------------------------------
