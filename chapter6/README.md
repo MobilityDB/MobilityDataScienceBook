@@ -22,7 +22,7 @@ create extension hstore;
 
 osm2pgrouting -h localhost -p 5432 -U postgres -W postgres -f brussels.osm --dbname brussels_sf0.1 -c mapconfig_brussels.xml
 
-osm2pgsql -H  -P 5432 -H localhost -d brussels_sf0.01 -c -U postgres -W --proj=3857 brussels.osm
+osm2pgsql   -P 5432 -H localhost -d brussels_sf0.01 -c -U postgres -W --proj=3857 brussels.osm
 
 psql -d brussels_sf0.01 -p 5432 (or your port) -h localhost
 
